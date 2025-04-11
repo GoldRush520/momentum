@@ -5,6 +5,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { claimPendingYield } from "./services/PoolService.js";
+import { getCoinObjects } from "./utils/TransactionUtil.js";
+import { CoinType } from "./enum/CoinType.js";
+import { trade } from "./services/TradeSerivce.js";
 
 // 获取当前文件的目录路径
 const __filename = fileURLToPath(import.meta.url);
@@ -18,9 +21,12 @@ const client = new SuiClient({ url: 'https://fullnode.mainnet.sui.io:443' });
 
 async function main() {
     const suiPrivateKey = config.suiPrivateKey;
-    const { schema, secretKey } = decodeSuiPrivateKey(suiPrivateKey);
+    const {schema, secretKey} = decodeSuiPrivateKey(suiPrivateKey);
     const keypair = Ed25519Keypair.fromSecretKey(secretKey);
-    await claimPendingYield(client, keypair)
+    // await claimPendingYield(client, keypair)
+    // const coinObjects = await getCoinObjects(client, keypair, CoinType.SUI)
+    // console.log(coinObjects)
+    await trade(client, keypair)
 }
 
 main();

@@ -19,3 +19,17 @@ export async function estimateGasCostAndSet(client, tx) {
     tx.setGasPrice(gasPrice);
     tx.setGasBudget(gasBudget);
 }
+
+export async function getCoinObjects(client, keypair, coinAddress) {
+    const objects = await client.getCoins({
+        owner: keypair.toSuiAddress(),
+        coinType: coinAddress
+    });
+
+    if (objects.data.length === 0) {
+        console.error('No related coin objects for this address');
+        throw new Error('No related coin objects for this address');
+    }
+
+    return objects.data
+}

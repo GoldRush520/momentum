@@ -30,6 +30,7 @@ async function getPositionNFT(client, keypair) {
 }
 
 // 获取合适的 gas 对象
+// todo: merge all sui object directly
 async function getSuitableGasObject(client, keypair) {
     const address = keypair.toSuiAddress();
     try {
