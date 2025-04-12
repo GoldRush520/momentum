@@ -1,15 +1,22 @@
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { CoinType, getTokenNameByAddress } from "../enum/CoinType.js";
-import { getCoinObjects } from "../utils/TransactionUtil.js";
+import { formatBalanceChange, getCoinObjects } from "../utils/TransactionUtil.js";
 import { PoolType } from "../enum/PoolType.js";
+import { sleepRandomSeconds } from "../utils/TimeUtil.js";
 
-
-export async function trade(client, keypair) {
-    const pool = PoolType.USDT_USDC
-    // const pool = PoolType.SUI_USDC
-    let isReverse = true
-    const amount = await calculateSwapAmount(client, keypair, pool, isReverse)
-    await executeTrade(client, keypair, pool, amount, isReverse)
+// 交易一个回合: 即如果选择的是USDC_USDT交易对，则会先将USDC换成USDT，再将USDT换成USDC
+export async function trade(client, keypair, pool) {
+    let isReverse
+    isReverse = pool !== PoolType.SUI_USDC;
+    const amount = await calculateSwapAmount(client, keypair, pool, isReverse);
+    let gotAmount
+    if (amount !== 0n) {
+        gotAmount = await executeTrade(client, keypair, pool, amount, isReverse);
+        await sleepRandomSeconds();
+    } else {
+        gotAmount = await calculateSwapAmount(client, keypair, pool, !isReverse)
+    }
+    await executeTrade(client, keypair, pool, gotAmount, !isReverse)
 }
 
 async function calculateSwapAmount(client, keypair, pool, isReverse) {
@@ -160,11 +167,22 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
         const result = await client.signAndExecuteTransactionBlock({
             signer: keypair,
             transactionBlock: tx,
+            options: {
+                showEffects: true,
+                showBalanceChanges: true,
+            },
         });
-        console.log(`✅  swap ${getTokenNameByAddress(sourceCoin)} to ${getTokenNameByAddress(targetCoin)} successfully! The transaction hash is: `, result.digest);
+
+        if (result.effects?.status.status !== 'success') {
+            throw new Error(`交易失败: ${result.effects?.status.error}`);
+        }
+
+        const [sourceAmount, targetAmount] = formatBalanceChange(result.balanceChanges, sourceCoin, targetCoin)
+
+        console.log(`✅  swap ${sourceAmount} ${getTokenNameByAddress(sourceCoin)} to ${targetAmount} ${getTokenNameByAddress(targetCoin)} successfully! The transaction hash is:`, result.digest);
+        return result.balanceChanges.find(it => it.coinType === targetCoin).amount
     } catch (error) {
         console.error(`❌  Failed to swap ${getTokenNameByAddress(sourceCoin)} to ${getTokenNameByAddress(targetCoin)}:`, error);
     }
 
 }
-

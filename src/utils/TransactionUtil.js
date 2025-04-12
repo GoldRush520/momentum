@@ -1,3 +1,5 @@
+import { CoinType } from "../enum/CoinType.js";
+
 /**
  * 获取推荐 gas 配置并设置到 tx 上
  * @param client
@@ -32,4 +34,27 @@ export async function getCoinObjects(client, keypair, coinAddress) {
     }
 
     return objects.data
+}
+
+export function formatBalanceChange(balanceChanges, sourceCoin, targetCoin) {
+    const decimals = {
+        [CoinType.SUI]: 9,
+        [CoinType.USDC]: 6,
+        [CoinType.USDT]: 6
+    };
+    const sourceCoinAmount = BigInt(Math.abs(balanceChanges.filter(it => it.coinType === sourceCoin)[0].amount))
+    const targetCoinAmount = BigInt(Math.abs(balanceChanges.filter(it => it.coinType === targetCoin)[0].amount))
+    return [formatAmount(sourceCoinAmount, decimals[sourceCoin]), formatAmount(targetCoinAmount, decimals[targetCoin])]
+}
+
+function formatAmount(amount, decimals) {
+    const amt = BigInt(amount);
+    const factor = 10n ** BigInt(decimals);
+    const whole = amt / factor;
+    const fraction = amt % factor;
+
+    if (fraction === 0n) return whole.toString();
+
+    const fracStr = fraction.toString().padStart(decimals, '0').replace(/0+$/, '');
+    return `${whole}.${fracStr}`;
 }

@@ -18,3 +18,16 @@ export const PoolType = {
         reverseParameter: "79226673515401279992447579050"
     }
 };
+
+export function getPoolByName(name) {
+    switch (name) {
+        case "SUI_USDC":
+            return PoolType.SUI_USDC;
+        case "USDT_USDC":
+            return PoolType.USDT_USDC;
+        case "USDC_USDT":
+            return PoolType.USDT_USDC;
+        default:
+            throw new Error(`Pool ${name} not found`);
+    }
+}
