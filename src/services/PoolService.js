@@ -148,7 +148,7 @@ export async function claimPendingYield(client, keypair) {
         [fee[0], fee[1]],
         recipientAddress
     );
-
+    // todo: remove set gas manually
     tx.setSender(keypair.toSuiAddress())
     await estimateGasCostAndSet(client, tx)
 
@@ -157,8 +157,8 @@ export async function claimPendingYield(client, keypair) {
             signer: keypair,
             transactionBlock: tx,
         });
-        console.log('✅Claim pool fee successfully:', result);
+        console.log('✅ Claim pool fee successfully:', result);
     } catch (error) {
-        console.error('❌Failed to claim pool fee:', error);
+        console.error('❌ Failed to claim pool fee:', error);
     }
 }

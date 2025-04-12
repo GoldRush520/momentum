@@ -6,7 +6,8 @@ import { PoolType } from "../enum/PoolType.js";
 
 export async function trade(client, keypair) {
     const pool = PoolType.USDT_USDC
-    let isReverse = false
+    // const pool = PoolType.SUI_USDC
+    let isReverse = true
     const amount = await calculateSwapAmount(client, keypair, pool, isReverse)
     await executeTrade(client, keypair, pool, amount, isReverse)
 }
@@ -34,8 +35,8 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
     const splitAmount = tx.pure.u64(amount);
 
     const sharedPool = tx.sharedObjectRef({
-        objectId: '0x8a86062a0193c48b9d7c42e5d522ed1b30ba1010c72e0cd0dad1525036775c8b',
-        initialSharedVersion: 499761263,
+        objectId: pool.packageId,
+        initialSharedVersion: pool.initialSharedVersion,
         mutable: true,
     });
     const isReverseObj = tx.pure.bool(!isReverse);
@@ -58,7 +59,12 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
     const refund = tx.pure.address(keypair.toSuiAddress())
 
     // ==== Transactions ====
-    const splitResult = await mergeSourceCoins(client, keypair, sourceCoin, tx, splitAmount)
+    let splitResult;
+    if (sourceCoin === CoinType.SUI) {
+        splitResult = tx.splitCoins(tx.gas, [amount])
+    } else {
+        splitResult = await mergeSourceCoins(client, keypair, sourceCoin, tx, splitAmount);
+    }
     // flash_swap
     const [coinOut, coinDebt, coinReceived] = tx.moveCall({
         target: '0x70285592c97965e811e0c6f98dccc3a9c2b4ad854b3594faab9597ada267b860::trade::flash_swap',
@@ -98,14 +104,14 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
     // 7 into_balance (target coin)
     const balanceTarget= tx.moveCall({
         target: '0x2::coin::into_balance',
-        typeArguments: [CoinType.USDT],
+        typeArguments: [pool.tokenA],
         arguments: [isReverse ? result4[0] : result6],
     });
 
     // 8 into_balance (source coin)
     const balanceSource = tx.moveCall({
         target: '0x2::coin::into_balance',
-        typeArguments: [CoinType.USDC],
+        typeArguments: [pool.tokenB],
         arguments: [isReverse ? result6 : result4[0]],
     });
 
