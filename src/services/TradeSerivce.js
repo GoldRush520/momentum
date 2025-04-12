@@ -5,17 +5,25 @@ import { PoolType } from "../enum/PoolType.js";
 import { sleepRandomSeconds } from "../utils/TimeUtil.js";
 
 // 交易一个回合: 即如果选择的是USDC_USDT交易对，则会先将USDC换成USDT，再将USDT换成USDC
-export async function trade(client, keypair, pool) {
-    let isReverse
-    isReverse = pool !== PoolType.SUI_USDC;
-    const amount = await calculateSwapAmount(client, keypair, pool, isReverse);
-    let gotAmount
-    if (amount !== 0n) {
-        gotAmount = await executeTrade(client, keypair, pool, amount, isReverse);
-        await sleepRandomSeconds();
+export async function trade(client, keypair, pool, amount) {
+    let isReverse;
+    let amountWithDecimal;
+    if (pool === PoolType.SUI_USDC) {
+        isReverse = false;
+        amountWithDecimal = BigInt(amount * 10 ** 9)
     } else {
-        gotAmount = await calculateSwapAmount(client, keypair, pool, !isReverse)
+        isReverse = true
+        amountWithDecimal = BigInt(amount * 10 ** 6)
     }
+    const balance = await calculateSwapAmount(client, keypair, pool, isReverse);
+    if (balance < amountWithDecimal) {
+        throw new Error(`${getTokenNameByAddress(pool.tokenA)}余额不足${amount}, 请修改配置, 或者添加更多后，再运行脚本`)
+    }
+    let gotAmount = await executeTrade(client, keypair, pool, amountWithDecimal, isReverse);
+
+    console.log("随机等待一段时间后, 将执行换回操作......")
+    await sleepRandomSeconds();
+
     await executeTrade(client, keypair, pool, gotAmount, !isReverse)
 }
 
@@ -179,10 +187,10 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
 
         const [sourceAmount, targetAmount] = formatBalanceChange(result.balanceChanges, sourceCoin, targetCoin)
 
-        console.log(`✅  swap ${sourceAmount} ${getTokenNameByAddress(sourceCoin)} to ${targetAmount} ${getTokenNameByAddress(targetCoin)} successfully! The transaction hash is:`, result.digest);
+        console.log(`✅  用${sourceAmount} ${getTokenNameByAddress(sourceCoin)}成功换取${targetAmount} ${getTokenNameByAddress(targetCoin)}! 交易hash是:`, result.digest);
         return result.balanceChanges.find(it => it.coinType === targetCoin).amount
     } catch (error) {
-        console.error(`❌  Failed to swap ${getTokenNameByAddress(sourceCoin)} to ${getTokenNameByAddress(targetCoin)}:`, error);
+        console.error(`❌   ${getTokenNameByAddress(sourceCoin)}换取${getTokenNameByAddress(targetCoin)}失败:`, error);
     }
 
 }
