@@ -3,6 +3,7 @@ import { CoinType, getTokenNameByAddress } from "../enum/CoinType.js";
 import { formatBalanceChange, getCoinObjects } from "../utils/TransactionUtil.js";
 import { PoolType } from "../enum/PoolType.js";
 import { sleepRandomSeconds } from "../utils/TimeUtil.js";
+import chalk from 'chalk';
 
 // 交易一个回合: 即如果选择的是USDC_USDT交易对，则会先将USDC换成USDT，再将USDT换成USDC
 export async function trade(client, keypair, pool, amount) {
@@ -17,11 +18,11 @@ export async function trade(client, keypair, pool, amount) {
     }
     const balance = await calculateSwapAmount(client, keypair, pool, isReverse);
     if (balance < amountWithDecimal) {
-        throw new Error(`${getTokenNameByAddress(pool.tokenA)}余额不足${amount}, 请修改配置, 或者添加更多后，再运行脚本`)
+        throw new Error(chalk.red(`❌ ${getTokenNameByAddress(pool.tokenA)}余额不足${amount}, 请修改配置, 或者添加更多后，再运行脚本`))
     }
     let gotAmount = await executeTrade(client, keypair, pool, amountWithDecimal, isReverse);
 
-    console.log("随机等待一段时间后, 将执行换回操作......")
+    console.log(chalk.cyan("⏳ 随机等待一段时间后, 将执行换回操作......"))
     await sleepRandomSeconds();
 
     await executeTrade(client, keypair, pool, gotAmount, !isReverse)
@@ -182,15 +183,15 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
         });
 
         if (result.effects?.status.status !== 'success') {
-            throw new Error(`交易失败: ${result.effects?.status.error}`);
+            throw new Error(`${result.effects?.status.error}`);
         }
 
         const [sourceAmount, targetAmount] = formatBalanceChange(result.balanceChanges, sourceCoin, targetCoin)
 
-        console.log(`✅  用${sourceAmount} ${getTokenNameByAddress(sourceCoin)}成功换取${targetAmount} ${getTokenNameByAddress(targetCoin)}! 交易hash是:`, result.digest);
+        console.log(chalk.green(`✅ 交易成功! 支付: ${chalk.cyan(sourceAmount)} ${chalk.cyan(getTokenNameByAddress(sourceCoin))} | 获得: ${chalk.cyan(targetAmount)} ${chalk.cyan(getTokenNameByAddress(targetCoin))} | 哈希: ${chalk.white(result.digest)}`));
+        
         return result.balanceChanges.find(it => it.coinType === targetCoin).amount
     } catch (error) {
-        console.error(`❌   ${getTokenNameByAddress(sourceCoin)}换取${getTokenNameByAddress(targetCoin)}失败:`, error);
+        console.log(chalk.red(`❌ 交易失败! 从 ${chalk.cyan(getTokenNameByAddress(sourceCoin))} 到 ${chalk.cyan(getTokenNameByAddress(targetCoin))} | 错误: ${chalk.white(error.message)}`));
     }
-
 }
