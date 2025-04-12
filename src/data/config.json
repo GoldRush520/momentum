@@ -6,18 +6,18 @@
       "suiPrivateKey": "your sui private key 1",
       "tokenPairs": [
         {
-          "name": "SUI_USDC",
-          "amount": 3.2,
+          "name": "USDC_USDT",
+          "amount": 3,
           "swapRound": 1
         }
       ]
     },
     {
-      "suiPrivateKey": "",
+      "suiPrivateKey": "your sui private key 2",
       "tokenPairs": [
         {
-          "name": "your sui private key 2",
-          "amount": 51.3,
+          "name": "SUI_USDC",
+          "amount": 50,
           "swapRound": 1
         }
       ]
