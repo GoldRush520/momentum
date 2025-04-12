@@ -1,3 +1,26 @@
 {
-  "suiPrivateKey": "your sui private key"
-} 
+  "shuffleAccounts": false,
+  "shuffleTokenPairs": false,
+  "accounts": [
+    {
+      "suiPrivateKey": "your sui private key 1",
+      "tokenPairs": [
+        {
+          "name": "SUI_USDC",
+          "amount": 3.2,
+          "swapRound": 1
+        }
+      ]
+    },
+    {
+      "suiPrivateKey": "",
+      "tokenPairs": [
+        {
+          "name": "your sui private key 2",
+          "amount": 51.3,
+          "swapRound": 1
+        }
+      ]
+    }
+  ]
+}
