@@ -11,6 +11,7 @@ import { trade } from "./services/TradeSerivce.js";
 import { getPoolByName } from "./enum/PoolType.js";
 import chalk from 'chalk';
 import { shuffle } from "./utils/Util.js";
+import { sleepRandomSeconds } from "./utils/TimeUtil.js";
 
 // 获取当前文件的目录路径
 const __filename = fileURLToPath(import.meta.url);
@@ -46,6 +47,7 @@ async function main() {
             for (let i = 0; i < tokenPair.swapRound; i++) {
                 console.log(chalk.yellow(`🔄 执行第 ${chalk.white(i + 1)}/${tokenPair.swapRound} 轮交易`));
                 await trade(client, keypair, pool, tokenPair.amount);
+                await sleepRandomSeconds()
             }
             console.log(chalk.green(`✅ 交易对 ${chalk.white(tokenPair.name)} 处理完成`));
         }
