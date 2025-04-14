@@ -37,8 +37,11 @@ async function calculateSwapAmount(client, keypair, pool, isReverse) {
 
 async function mergeSourceCoins(client, keypair, sourceTokenAddress, tx, amount) {
     const coins = await getCoinObjects(client, keypair, sourceTokenAddress)
-    tx.mergeCoins(tx.object(coins[0].coinObjectId), coins.slice(1).map(it => tx.object(it.coinObjectId)))
-    return tx.splitCoins(tx.object(coins[0].coinObjectId), [amount])
+    if (coins.length > 1) {
+        tx.mergeCoins(tx.object(coins[0].coinObjectId), coins.slice(1).map(it => tx.object(it.coinObjectId)));
+    }
+
+    return tx.splitCoins(tx.object(coins[0].coinObjectId), [amount]);
 }
 
 export async function executeTrade(client, keypair, pool, amount, isReverse) {
