@@ -47,6 +47,7 @@ async function main() {
             for (let i = 0; i < tokenPair.swapRound; i++) {
                 console.log(chalk.yellow(`🔄 执行第 ${chalk.white(i + 1)}/${tokenPair.swapRound} 轮交易`));
                 await trade(client, keypair, pool, tokenPair.amount);
+                console.log(chalk.cyan("⏳ 随机等待一段时间后, 将执行下一轮操作......"))
                 await sleepRandomSeconds()
             }
             console.log(chalk.green(`✅ 交易对 ${chalk.white(tokenPair.name)} 处理完成`));
