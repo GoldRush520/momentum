@@ -28,7 +28,7 @@ export const getLeaderboardInfo = async (address) => {
         }
         return null;
     } catch (error) {
-        console.error('获取交易列表失败:', error);
+        console.error('获取leaderboard失败:', error);
         return null;
     }
 };
