@@ -4,6 +4,8 @@ import { formatBalanceChange, getCoinObjects } from "../utils/TransactionUtil.js
 import { PoolType } from "../enum/PoolType.js";
 import { sleepRandomSeconds } from "../utils/TimeUtil.js";
 import chalk from 'chalk';
+import { formatToBeijingTime } from "../utils/DateUtil.js";
+import { getLeaderboardInfo } from "../api/api.js";
 
 // 交易一个回合: 即如果选择的是USDC_USDT交易对，则会先将USDC换成USDT，再将USDT换成USDC
 export async function trade(client, keypair, pool, amount) {
@@ -197,4 +199,48 @@ export async function executeTrade(client, keypair, pool, amount, isReverse) {
     } catch (error) {
         console.log(chalk.red(`❌ 交易失败! 从 ${chalk.cyan(getTokenNameByAddress(sourceCoin))} 到 ${chalk.cyan(getTokenNameByAddress(targetCoin))} | 错误: ${chalk.white(error.message)}`));
     }
+}
+
+export async function getLatestFlashSwapTime(client, address) {
+    const targetPackage = '0x70285592c97965e811e0c6f98dccc3a9c2b4ad854b3594faab9597ada267b860';
+    const targetModule = 'trade';
+    const targetFunction = 'flash_swap';
+
+    const txs = await client.queryTransactionBlocks({
+        filter: { FromAddress: address },
+        order: 'descending',
+        limit: 50,
+    });
+
+    const txDetails = await client.multiGetTransactionBlocks({
+        digests: txs.data.map(it => it.digest),
+        options: { showInput: true },
+    });
+
+    for (const txDetail of txDetails) {
+
+        const transactionCommands = txDetail.transaction.data.transaction.transactions
+
+        const hasFlashSwap = transactionCommands.some(command => {
+            // 检查 MoveCall 是否存在，并且检查 package, module 和 function 是否匹配
+            return command.MoveCall &&
+                command.MoveCall.package === targetPackage &&
+                command.MoveCall.module === targetModule &&
+                command.MoveCall.function === targetFunction;
+        });
+
+        if (hasFlashSwap) {
+            return formatToBeijingTime(Number(txDetail.timestampMs));
+        }
+    }
+
+    return null
+}
+
+export async function getTradeVolume(address) {
+    const leaderBoardInfo = await getLeaderboardInfo(address)
+    if (!leaderBoardInfo && !leaderBoardInfo.userData) {
+        return '未知'
+    }
+    return leaderBoardInfo.userData.volume
 }
