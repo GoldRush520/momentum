@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { trade } from "./services/TradeSerivce.js";
 import { getPoolByName } from "./enum/PoolType.js";
 import chalk from 'chalk';
-import { shuffle } from "./utils/Util.js";
+import { printAuthorInfo, shuffle } from "./utils/Util.js";
 import { sleepRandomSeconds } from "./utils/TimeUtil.js";
 import inquirer from 'inquirer';
 import { getAccountsInfo, selectAccount, showAccountInfo } from "./services/AccountService.js";
@@ -22,6 +22,8 @@ const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const client = new SuiClient({url: 'https://fullnode.mainnet.sui.io:443'});
 
 async function main() {
+    printAuthorInfo()
+
     const accountsInfo = await getAccountsInfo(client, config.accounts)
     await showAccountInfo(accountsInfo)
     let selectedAccounts = await selectAccount(accountsInfo, config);
