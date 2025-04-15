@@ -3,6 +3,7 @@
   "shuffleTokenPairs": false,
   "accounts": [
     {
+      "nickname": "sui地址的备注, 例如sui小号1",
       "suiPrivateKey": "your sui private key 1",
       "tokenPairs": [
         {
@@ -13,6 +14,7 @@
       ]
     },
     {
+      "nickname": "sui地址的备注, 例如sui小号2",
       "suiPrivateKey": "your sui private key 2",
       "tokenPairs": [
         {

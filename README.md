@@ -4,6 +4,9 @@
 
 **更多脚本分享, 关注我的[X](https://x.com/0Xiaofan22921)**
 
+## 预览
+![preview](./src/image/preview.jpg)
+
 ## 功能特点
 
 - 🔄 支持多账户自动交易
@@ -34,6 +37,7 @@ npm install
   "shuffleTokenPairs": true,
   "accounts": [
     {
+      "nickname": "Sui地址的备注, 例如: Sui小号",
       "suiPrivateKey": "你的私钥",
       "tokenPairs": [
         {
@@ -52,8 +56,9 @@ npm install
 - `shuffleAccounts`: 是否随机打乱账户执行顺序
 - `shuffleTokenPairs`: 是否随机打乱交易对执行顺序
 - `accounts`: 账户配置数组
+  - `nickname`: Sui地址的备注, 例如: Sui小号
   - `suiPrivateKey`: Sui 私钥
-  - `tokenPairs`: 交易对配置
+  - `tokenPairs`: 交易对配置 (**如果打算一次只交互一个地址可以不填**)
     - `name`: 交易对名称（SUI_USDC/USDC_USDT）
     - `swapRound`: 交易轮次
     - `amount`: 交易数量
