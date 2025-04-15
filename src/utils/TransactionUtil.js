@@ -1,5 +1,11 @@
 import { CoinType } from "../enum/CoinType.js";
 
+const decimals = {
+    [CoinType.SUI]: 9,
+    [CoinType.USDC]: 6,
+    [CoinType.USDT]: 6
+};
+
 /**
  * 获取推荐 gas 配置并设置到 tx 上
  * @param client
@@ -36,12 +42,17 @@ export async function getCoinObjects(client, keypair, coinAddress) {
     return objects.data
 }
 
+export async function getCoinBalance(client, keypair, coinAddress) {
+    const coinObjects = await getCoinObjects(client, keypair, coinAddress)
+    return coinObjects.reduce((acc, it) => acc + BigInt(it.balance), 0n);
+}
+
+export async function getFormatCoinBalance(client, keypair, coinAddress) {
+    const balance = await getCoinBalance(client, keypair, coinAddress)
+    return formatAmount(balance, decimals[coinAddress])
+}
+
 export function formatBalanceChange(balanceChanges, sourceCoin, targetCoin) {
-    const decimals = {
-        [CoinType.SUI]: 9,
-        [CoinType.USDC]: 6,
-        [CoinType.USDT]: 6
-    };
     const sourceCoinAmount = BigInt(Math.abs(balanceChanges.filter(it => it.coinType === sourceCoin)[0].amount))
     const targetCoinAmount = BigInt(Math.abs(balanceChanges.filter(it => it.coinType === targetCoin)[0].amount))
     return [formatAmount(sourceCoinAmount, decimals[sourceCoin]), formatAmount(targetCoinAmount, decimals[targetCoin])]

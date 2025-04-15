@@ -4,8 +4,7 @@ import { decodeSuiPrivateKey } from "@mysten/sui.js/cryptography";
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { claimPendingYield } from "./services/PoolService.js";
-import { formatBalanceChange, getCoinObjects } from "./utils/TransactionUtil.js";
+import { getFormatCoinBalance } from "./utils/TransactionUtil.js";
 import { CoinType } from "./enum/CoinType.js";
 import { getLatestFlashSwapTime, getTradeVolume, trade } from "./services/TradeSerivce.js";
 import { getPoolByName } from "./enum/PoolType.js";
@@ -151,6 +150,8 @@ async function getAccountsInfo() {
 
         const lastSwapTime = await getLatestFlashSwapTime(client, address);
         const volumeInfo = await getTradeVolume(address)
+        const suiBalance = await getFormatCoinBalance(client, keypair, CoinType.SUI)
+        const usdcBalance = await getFormatCoinBalance(client, keypair, CoinType.USDC)
 
         const formattedTime = lastSwapTime
             ? lastSwapTime.toLocaleString('zh-CN', {hour12: false})
@@ -160,6 +161,8 @@ async function getAccountsInfo() {
             i + 1,
             account.nickname || '未设置',
             address,
+            suiBalance,
+            usdcBalance,
             volumeInfo.value.toFixed(2),
             volumeInfo.rank,
             formattedTime,
@@ -171,12 +174,12 @@ async function getAccountsInfo() {
 async function showAccountInfo(accountsInfo) {
 
     const table = new Table({
-        head: ['序号', '备注', '地址', '交易额', '交易额排名', '上次swap的时间'],
+        head: ['序号', '备注', '地址', 'Sui余额', 'USDC余额', '交易额', '交易额排名', '上次swap的时间'],
         style: {
             head: ['cyan'],
             border: ['gray'],
         },
-        colWidths: [8, 15, 68, 15, 15, 25],
+        colWidths: [8, 10, 68, 15, 15, 10, 15, 25],
         chars: {
             top: '─', 'top-mid': '┬', 'top-left': '┌', 'top-right': '┐',
             bottom: '─', 'bottom-mid': '┴', 'bottom-left': '└', 'bottom-right': '┘',
