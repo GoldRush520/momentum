@@ -9,20 +9,26 @@ import { getLeaderboardInfo } from "../api/api.js";
 
 // 交易一个回合: 即如果选择的是USDC_USDT交易对，则会先将USDC换成USDT，再将USDT换成USDC
 export async function trade(client, keypair, pool, amount) {
-    let isReverse;
-    let amountWithDecimal;
-    if (pool === PoolType.SUI_USDC) {
-        isReverse = false;
-        amountWithDecimal = BigInt(amount * 10 ** 9)
+    let swapAmount;
+    let isReverse = pool === PoolType.USDT_USDC;
+
+    if (amount) {
+        const balance = await calculateSwapAmount(client, keypair, pool, isReverse);
+        const amountWithDecimal = pool === PoolType.USDT_USDC ? BigInt(amount * 10 ** 6) : BigInt(amount * 10 ** 9)
+        if (balance < amountWithDecimal) {
+            throw new Error(chalk.red(`❌ ${getTokenNameByAddress(pool.tokenA)}余额不足${amount}, 请修改配置, 或者添加更多后，再运行脚本`))
+        }
+        swapAmount = amountWithDecimal
     } else {
-        isReverse = true
-        amountWithDecimal = BigInt(amount * 10 ** 6)
+        // 如果配置文件中未指定每次的交易额, 则使用该地址的全部数量去swap
+        swapAmount = await calculateSwapAmount(client, keypair, pool, isReverse)
+        if (pool === PoolType.SUI_USDC) {
+            // 如果是sui的话, 只使用90%的sui去交换, 以免造成gas不足
+            swapAmount = swapAmount * 90n / 100n
+        }
     }
-    const balance = await calculateSwapAmount(client, keypair, pool, isReverse);
-    if (balance < amountWithDecimal) {
-        throw new Error(chalk.red(`❌ ${getTokenNameByAddress(pool.tokenA)}余额不足${amount}, 请修改配置, 或者添加更多后，再运行脚本`))
-    }
-    let gotAmount = await executeTrade(client, keypair, pool, amountWithDecimal, isReverse);
+
+    let gotAmount = await executeTrade(client, keypair, pool, swapAmount, isReverse);
 
     console.log(chalk.cyan("⏳ 随机等待一段时间后, 将执行换回操作......"))
     await sleepRandomSeconds();

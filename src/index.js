@@ -28,25 +28,72 @@ async function main() {
     const accountsInfo = await getAccountsInfo()
     await showAccountInfo(accountsInfo)
 
-    // 使用 inquirer 让用户选择账户
+    let selectedAccounts = []
     const { selectedAccountIndex } = await inquirer.prompt([
         {
             type: 'input',
             name: 'selectedAccountIndex',
-            message: '请选择需要操作的账户的序号：',
+            message: '请输入账户序号(回车表示全部账户):',
             validate: input => {
+                if (input === '') return true; // 空表示默认执行全部
                 return isNaN(input) ? '必须是数字' : true;
             }
         }
     ]);
-    const selectedAccount = accountsInfo[selectedAccountIndex - 1];
-    console.log(chalk.blue(`您选择的账户是: ${selectedAccount[1]} (${selectedAccount[2]})`));
 
-    if (config.shuffleAccounts) {
-        config.accounts = shuffle(config.accounts)
+    if (selectedAccountIndex === '') {
+        console.log(chalk.blue('将根据config.json文件里的配置操作所有账户'));
+        if (config.shuffleAccounts) {
+            config.accounts = shuffle(config.accounts)
+        }
+        selectedAccounts = config.accounts
+    } else {
+        const selectedAccount = accountsInfo[selectedAccountIndex - 1];
+        console.log(chalk.blue(`你选择的账户是: ${selectedAccount[1]} (${selectedAccount[2]})`));
+        const account = config.accounts[selectedAccountIndex - 1]
+        const { selectedTokenPair } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'selectedTokenPair',
+                message: '请选择交易对：',
+                choices: ['USDC_USDT', 'SUI_USDC'],
+                default: 'USDC_USDT' // 可选：默认选中项
+            }
+        ]);
+
+        const { swapAmount } = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'swapAmount',
+                message: '请输入交易数量(回车表示全部数量):',
+                validate: input => {
+                    if (input === '') return true; // 空表示默认执行全部
+                    return isNaN(input) ? '必须是数字' : true;
+                }
+            }
+        ]);
+        const { swapRounds } = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'swapRounds',
+                message: '请输入交易回合数(回车表示1):',
+                default: 1,
+                validate: input => {
+                    return isNaN(input) ? '必须是数字' : true;
+                }
+            }
+        ]);
+        account.tokenPairs = [{
+            "name": selectedTokenPair,
+            "amount": swapAmount === '' ? undefined : Number(swapAmount),
+            "swapRound": Number(swapRounds)
+        }]
+
+        selectedAccounts.push(account)
     }
 
-    for (let account of config.accounts) {
+
+    for (let account of selectedAccounts) {
         const suiPrivateKey = account.suiPrivateKey;
         const {schema, secretKey} = decodeSuiPrivateKey(suiPrivateKey);
         const keypair = Ed25519Keypair.fromSecretKey(secretKey);
@@ -74,6 +121,23 @@ async function main() {
     }
     console.log(chalk.green('✨ 所有交易执行完成！'));
     console.log(chalk.gray('----------------------------------------'));
+
+    const continueTrading = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'action',
+            message: '✨ 所有交易执行完成！您想要继续选择地址交易还是退出？',
+            choices: ['继续选择地址交易', '退出']
+        }
+    ]);
+
+    if (continueTrading.action === '退出') {
+        console.log(chalk.blue('感谢使用，再见！'));
+        process.exit(0);
+    } else {
+        // 重新开始选择账户和交易
+        await main(); // 假设 main() 是包含所有交易逻辑的主函数
+    }
 }
 
 async function getAccountsInfo() {
@@ -112,7 +176,7 @@ async function showAccountInfo(accountsInfo) {
             head: ['cyan'],
             border: ['gray'],
         },
-        colWidths: [8, 15, 68, 25],
+        colWidths: [8, 15, 68, 15, 15, 25],
         chars: {
             top: '─', 'top-mid': '┬', 'top-left': '┌', 'top-right': '┐',
             bottom: '─', 'bottom-mid': '┴', 'bottom-left': '└', 'bottom-right': '┘',
