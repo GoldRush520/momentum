@@ -18,7 +18,19 @@ export const getAccountsInfo = async (client, accounts) => {
         const address = keypair.toSuiAddress();
 
         const lastSwapTime = await getLatestFlashSwapTime(client, address);
-        const volumeInfo = await getTradeVolume(address);
+        // const volumeInfo = {
+        //     value: undefined,
+        //     rank: "未知"
+        // };
+        // let volumeInfo;
+        // try {
+        //     volumeInfo = await getTradeVolume(address);
+        // } catch (e) {
+        //     volumeInfo = {
+        //         value: undefined,
+        //         rank: "未知"
+        //     };
+        // }
         const suiBalance = await getFormatCoinBalance(client, keypair, CoinType.SUI);
         const usdcBalance = await getFormatCoinBalance(client, keypair, CoinType.USDC);
 
@@ -32,8 +44,8 @@ export const getAccountsInfo = async (client, accounts) => {
             address,
             suiBalance,
             usdcBalance,
-            volumeInfo.value.toFixed(2),
-            volumeInfo.rank,
+            // isNaN(volumeInfo.value) ? "未知" : volumeInfo.value.toFixed(2),
+            // volumeInfo.rank,
             formattedTime,
         ]);
     }
@@ -42,12 +54,12 @@ export const getAccountsInfo = async (client, accounts) => {
 
 export const showAccountInfo = (accountsInfo) => {
     const table = new Table({
-        head: ['序号', '备注', '地址', 'Sui余额', 'USDC余额', '交易额', '交易额排名', '上次swap的时间'],
+        head: ['序号', '备注', '地址', 'Sui余额', 'USDC余额', '上次swap的时间'],
         style: {
             head: ['cyan'],
             border: ['gray'],
         },
-        colWidths: [8, 10, 68, 15, 15, 10, 15, 25],
+        colWidths: [8, 10, 68, 15, 15, 25],
         chars: {
             top: '─', 'top-mid': '┬', 'top-left': '┌', 'top-right': '┐',
             bottom: '─', 'bottom-mid': '┴', 'bottom-left': '└', 'bottom-right': '┘',
